@@ -2,6 +2,7 @@ from django.test import TestCase
 from .models import Card, User, Event, GameState
 
 class overrallTestCase(TestCase):
+    
     def setUp(self):
         gamestate = GameState()
         gamestate.current_cash = 2500.0
@@ -18,3 +19,4 @@ class overrallTestCase(TestCase):
 
     def test_user_initiates_level_1(self):
         """Check if new Users start level 1"""
+        pass

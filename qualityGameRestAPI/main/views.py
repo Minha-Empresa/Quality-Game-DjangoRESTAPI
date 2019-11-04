@@ -49,13 +49,22 @@ def create_or_retrieve_user(request):
 
         if(len(users) == 0):
             # User doesn't exists, create a new game state and a new user
+            # Creating game state for the new user
             gameState = GameState()
+            gameState.current_cash = 2500.00
+            gameState.current_approval = 100
+            gameState.current_client_satisfaction = 100
+            gameState.current_employees_satisfaction = 100
+            gameState.current_overrall_satisfaction = 100
+            gameState.current_level = 1
             gameState.save()
+
+            # Creating user
             user = User()
-            user.user_name = request.data["request"]
+            user.user_name = request.data["username"]
             user.user_current_state = gameState
             user.save()
-            return Response(UserSerializer(user))
+            return Response(UserSerializer(user).data)
 
         else:
             # User exists, return user data

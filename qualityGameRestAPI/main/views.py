@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Card, User, GameState, Event
-from .serializers import CardSerializer, UserSerializer
+from .serializers import CardSerializer, UserSerializer, GameStateSerializer
 
 # Create your views here.
 class CardList(generics.ListCreateAPIView):
@@ -17,42 +17,49 @@ class UserList(generics.ListCreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
-# Example Function
+###### Retrieve game state for user ######
 @api_view(['GET', 'POST'])
-def cards_list(request):
-    """
-    List all cards.
-    """
-    if request.method == 'POST':
-        print("Request is post")
-        cards = Card.objects.all()
-        serializer = CardSerializer(cards, many=True)
-        return Response(serializer.data)
+def retrieve_game_state(request):
+    user = request.data["username"]
+    try:
+        user_tmp = User.objects.get(user_name=user)
+        gameState = get_game_state(user_tmp)
+        if(gameState == None):
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(GameStateSerializer(gameState).data)
+    except:
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+# get game state for a given usere
+def get_game_state(user_tmp):
+    try:
+        gameState = GameState.objects.get(pk=user_tmp.user_current_state.pk)
+        return gameState
+    except:
+        return None
 
-# Example Function
-def users_list(request):
-    """
-    List all users.
-    """
-    if request.method == "POST":
-        print("Request is post")
-        users = User.objects.all()
-    return Response(status=status.HTTP_400_BAD_REQUEST)
-
+###### Create or Retrieve user information and game state ######
 @api_view(['GET', 'POST'])
 def create_or_retrieve_user(request):
-    """
-    Try to retrieve an user or create a new one
-    """
     if request.method == "POST":
-        print("\n\nCreate or Retrieving user with POST request")
+        # create or retrieve user information and game state
         user = request.data["username"]
 
         users = User.objects.filter(user_name=user)
 
         if(len(users) == 0):
-            print("User no exists")
-            pass
+            # User doesn't exists, create a new game state and a new user
+            gameState = GameState()
+            gameState.save()
+            user = User()
+            user.user_name = request.data["request"]
+            user.user_current_state = gameState
+            user.save()
+            return Response(UserSerializer(user))
+
         else:
-            print("User found")
+            # User exists, return user data
+            user = users[0]
+            return Response(UserSerializer(user).data)  
+    else:
         return Response(status=status.HTTP_400_BAD_REQUEST)

@@ -72,3 +72,40 @@ def create_or_retrieve_user(request):
             return Response(UserSerializer(user).data)  
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET', 'POST'])
+def save_game_state(request):
+    try:
+        user = request.data["username"]
+        game_cash = request.data["game_cash"]
+        game_approval = request.data["game_approval"]
+        game_client_satisfaction = request.data["game_cli_satis"]
+        game_employees_satisfaction = request.data["game_emp_satis"]
+        game_overrall_satisfaction = request.data["game_over_satis"]
+        game_current_level = request.data["game_level"]
+
+    except:
+        print("POST data incorrect")
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user_tmp = User.objects.get(user_name=user)
+    
+    except:
+        print("User with username {} not found".format(user))
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        gameState = GameState.objects.filter(pk=user_tmp.user_current_state.pk)
+        gameState.update(current_cash=game_cash)
+        gameState.update(current_approval=game_approval)
+        gameState.update(current_client_satisfaction=game_client_satisfaction)
+        gameState.update(current_employees_satisfaction=game_employees_satisfaction)
+        gameState.update(current_overrall_satisfaction=game_overrall_satisfaction)
+        gameState.update(current_level=game_current_level)
+        
+        return Response(GameStateSerializer(gameState[0]).data)
+
+    except:
+        print("Game state not found for the given user or not updated.")
+        return Response(status=status.HTTP_400_BAD_REQUEST)

@@ -85,14 +85,14 @@ def save_game_state(request):
         game_current_level = request.data["game_level"]
 
     except:
-        print("POST data incorrect")
+        # POST data incorrect
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
     try:
         user_tmp = User.objects.get(user_name=user)
     
     except:
-        print("User with username {} not found".format(user))
+        # User with username not found
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
     try:
@@ -107,5 +107,5 @@ def save_game_state(request):
         return Response(GameStateSerializer(gameState[0]).data)
 
     except:
-        print("Game state not found for the given user or not updated.")
+        # Game state not found for the given user or not updated.
         return Response(status=status.HTTP_400_BAD_REQUEST)

@@ -4,7 +4,9 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Card, User, GameState, Event
-from .serializers import CardSerializer, UserSerializer, GameStateSerializer
+from .serializers import CardSerializer, UserSerializer, GameStateSerializer, EventSerializer
+import random
+import json
 
 # Create your views here.
 class CardList(generics.ListCreateAPIView):
@@ -50,20 +52,11 @@ def create_or_retrieve_user(request):
         if(len(users) == 0):
             # User doesn't exists, create a new game state and a new user
             # Creating game state for the new user
-            gameState = GameState()
-            gameState.current_cash = 2500.00
-            gameState.current_approval = 100
-            gameState.current_client_satisfaction = 100
-            gameState.current_employees_satisfaction = 100
-            gameState.current_overrall_satisfaction = 100
-            gameState.current_level = 1
-            gameState.save()
+            gameState = create_new_game_state()
 
             # Creating user
-            user = User()
-            user.user_name = request.data["username"]
-            user.user_current_state = gameState
-            user.save()
+            user = create_new_user(user, gameState)
+
             return Response(UserSerializer(user).data)
 
         else:
@@ -72,6 +65,27 @@ def create_or_retrieve_user(request):
             return Response(UserSerializer(user).data)  
     else:
         return Response(status=status.HTTP_400_BAD_REQUEST)
+
+def create_new_game_state():
+    try:
+        gameState = GameState()
+        gameState.current_cash = 2500.00
+        gameState.current_approval = 100
+        gameState.current_client_satisfaction = 100
+        gameState.current_employees_satisfaction = 100
+        gameState.current_overrall_satisfaction = 100
+        gameState.current_level = 1
+        gameState.save()
+        return gameState
+    except:
+        return False
+
+def create_new_user(username, gameState):
+    user = User()
+    user.user_name = username
+    user.user_current_state = gameState
+    user.save()
+    return user
 
 @api_view(['GET', 'POST'])
 def save_game_state(request):
@@ -109,3 +123,24 @@ def save_game_state(request):
     except:
         # Game state not found for the given user or not updated.
         return Response(status=status.HTTP_400_BAD_REQUEST)
+        
+
+@api_view(['GET', 'POST'])
+def get_events(request):
+    level = request.data["game_level"]
+    event_list = retrieve_event_list(level)
+    json_response = {}
+    for event in event_list:
+        json_response[event.pk] = EventSerializer(event).data
+        card = Card.objects.get(pk=event.card.pk)
+        json_response[event.pk]["card"] = CardSerializer(card).data
+    json_response = json.dumps(json_response)
+    return Response(json_response)
+
+def retrieve_event_list(level):
+    events = Event.objects.all().order_by('?')
+    response = []
+    for event in events:
+        if len(response) < 5 and event.card.card_level==int(level):
+            response.append(event)
+    return response
